@@ -71,6 +71,7 @@ grep GF_SECURITY_ADMIN_PASSWORD .env
 ```
 
 The dashboard is under **Dashboards → Laptop → Laptop Overview**.
+[docs/panels.md](docs/panels.md) explains what each panel means.
 
 Running the installer again is safe. It keeps your settings and your data.
 
@@ -251,22 +252,13 @@ Probably not. Some panels only have data on some hardware:
 | Pressure | Older kernels (before 4.20), or kernels built without PSI |
 | Container network | Shows the whole machine's traffic for containers on the host network, like this stack's own |
 
-If *everything* is empty, check each piece from the bottom up. Whichever step fails first
-is the broken one:
+If *everything* is empty, or something else is wrong, see
+[docs/troubleshooting.md](docs/troubleshooting.md). It goes through each piece step by
+step, plus wrong passwords, missing notifications, config changes that don't apply and
+more.
 
-```bash
-curl -s localhost:9100/metrics | head                 # 1. is Node Exporter collecting?
-curl -s 127.0.0.1:9090/api/v1/targets | grep health   # 2. is Prometheus collecting? both should say "up"
-curl -s 127.0.0.1:3000/api/health                     # 3. is Grafana alive?
-```
-
-If a container isn't behaving the way the config says, check what it actually got. The
-file and the running container can drift apart:
-
-```bash
-docker inspect grafana --format '{{range .Mounts}}{{.Destination}}{{println}}{{end}}'
-docker inspect node-exporter --format '{{range .Config.Cmd}}{{println .}}{{end}}'
-```
+Not sure what a panel is telling you? [docs/panels.md](docs/panels.md) explains every
+panel: what it shows, what's normal, and when to worry.
 
 ## How it works
 
@@ -380,6 +372,8 @@ scripts/uninstall.sh                            removes the stack, optionally wi
 scripts/setup.sh                                creates .env with a generated password
 scripts/lib.sh                                  shared helpers for the scripts
 .env.example                                    which settings exist
+docs/panels.md                                  what each panel means
+docs/troubleshooting.md                         fixes for common problems
 docs/images/                                    screenshots for this README
 CHANGELOG.md                                    what changed in each release
 CONTRIBUTING.md                                 how to help, and how to check your changes

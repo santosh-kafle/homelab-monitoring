@@ -11,6 +11,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 - A contributing guide, a security policy, a code of conduct, and forms for bug reports
   and feature requests.
+- `docs/panels.md`, which explains every panel: what it shows, what's normal and when
+  to worry.
+- `docs/troubleshooting.md`, with fixes for common problems, from install errors to
+  missing phone notifications.
 
 ### Fixed
 
