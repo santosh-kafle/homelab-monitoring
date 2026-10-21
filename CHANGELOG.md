@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-21
+
 ### Added
 
 - Alert rules for Node Exporter being down, high CPU, high memory, memory pressure, a disk
@@ -20,6 +22,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Container monitoring with cAdvisor: CPU, memory, network and disk per container, in a
   new "Containers" row at the top of the dashboard, plus alerts for a container that keeps
   restarting or runs out of memory.
+
+### Changed
+
+- Updated Grafana to 13.2.4.
 
 ## [0.3.0] - 2026-09-28
 
@@ -77,7 +83,8 @@ First release. Monitors the Linux machine it's installed on.
 - The power source panel works on any laptop, whatever the charger is called.
 - Disk model and serial number labels from the host's udev data.
 
-[Unreleased]: https://github.com/santosh-kafle/homelab-monitoring/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/santosh-kafle/homelab-monitoring/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/santosh-kafle/homelab-monitoring/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/santosh-kafle/homelab-monitoring/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/santosh-kafle/homelab-monitoring/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/santosh-kafle/homelab-monitoring/releases/tag/v0.1.0
