@@ -18,6 +18,7 @@ checks this machine is ready, then installs the monitoring stack.
 options:
   --local      only this machine can open grafana (the default)
   --lan        any device on your home network can open grafana
+  --ntfy       send alerts to your phone with ntfy (asked if not given)
   -y, --yes    dont ask any questions, use the defaults (for ci and scripts)
   -h, --help   show this help
 EOF
@@ -25,11 +26,14 @@ EOF
 
 # empty means "ask". only used when .env doesnt exist yet, an existing .env wins
 ACCESS=""
+# same idea, empty means "ask". only used when theres no ntfy url yet
+NTFY=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --local)   ACCESS=local ;;
     --lan)     ACCESS=lan ;;
+    --ntfy)    NTFY=yes ;;
     -y|--yes)  ASSUME_YES=1 ;;
     -h|--help) usage; exit 0 ;;
     *)         usage >&2; die "unknown option: $1" ;;
@@ -269,6 +273,47 @@ if [ "$bind_addr" != 127.0.0.1 ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# phone notifications with ntfy
+# opt in, because it sends alert text (disk names, container names) to a server
+# outside your home. without it alerts still show up on http://127.0.0.1:9093
+# ---------------------------------------------------------------------------
+
+ntfy_file=alertmanager/secrets/ntfy_url
+ntfy_new=0
+
+want_ntfy() {
+  if [ "$NTFY" = yes ]; then
+    return 0
+  fi
+  # not confirm() again, --yes must not quietly start sending data off the machine
+  if [ "$ASSUME_YES" = 1 ] || [ ! -t 0 ]; then
+    return 1
+  fi
+  local answer=""
+  echo
+  echo "get alerts as push notifications on your phone? it uses the free ntfy app"
+  echo "and the public server ntfy.sh, no account needed"
+  read -r -p "turn on phone notifications? [y/N] " answer || true
+  [[ "$answer" =~ ^[Yy]([Ee][Ss])?$ ]]
+}
+
+if [ -f "$ntfy_file" ]; then
+  info "keeping your existing ntfy notifications"
+elif want_ntfy; then
+  # on ntfy.sh anyone who knows a topic can read it, so the random part is
+  # what keeps your alerts private. treat it like a password
+  topic="homelab-$(openssl rand -hex 12)"
+  echo "https://ntfy.sh/$topic?template=alertmanager" > "$ntfy_file"
+  # alertmanager runs as the nobody user inside its container, so it needs read
+  # access for everyone. the folder is ignored by git, it never gets pushed
+  chmod 644 "$ntfy_file"
+  ntfy_new=1
+  info "phone notifications are on"
+else
+  info "no phone notifications. run this again whenever you want to turn them on"
+fi
+
+# ---------------------------------------------------------------------------
 # start the stack
 # ---------------------------------------------------------------------------
 
@@ -298,3 +343,21 @@ info "installed! open $url"
 echo "    username: $(env_value GF_SECURITY_ADMIN_USER admin)"
 echo "    password: run  grep GF_SECURITY_ADMIN_PASSWORD .env"
 echo "    dashboard: Dashboards -> Laptop -> Laptop Overview"
+echo "    alerts:    http://127.0.0.1:9093"
+
+if [ "$ntfy_new" = 1 ]; then
+  # the ?template part is only for alertmanager's json, a plain test message goes
+  # to the bare topic url
+  topic_url="$(sed 's/?.*//' "$ntfy_file")"
+  if curl -sf -d "homelab-monitoring is installed, your alerts will show up here" "$topic_url" >/dev/null; then
+    info "sent a test notification"
+  else
+    warn "couldnt reach ntfy.sh to send a test notification, check your internet connection"
+  fi
+  echo
+  echo "    to get notifications on your phone:"
+  echo "      1. install the ntfy app (android: play store or f-droid, iphone: app store)"
+  echo "      2. tap + and subscribe to this topic:  ${topic_url##*/}"
+  echo "    or open $topic_url in a browser."
+  echo "    keep the topic name to yourself, anyone who has it can read your alerts"
+fi

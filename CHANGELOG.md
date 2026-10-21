@@ -10,9 +10,13 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ### Added
 
 - Alert rules for Node Exporter being down, high CPU, high memory, memory pressure, a disk
-  that's almost full or will be full within a day, overheating and a low battery. For now
-  they're shown in Prometheus at `http://127.0.0.1:9090/alerts`; notifications come later.
+  that's almost full or will be full within a day, overheating and a low battery. You can
+  see them at `http://127.0.0.1:9090/alerts`.
 - Alertmanager, which receives alerts from Prometheus and groups them.
+- Phone notifications with ntfy. The installer asks if you want them (or pass `--ntfy`),
+  creates a random private topic, sends a test notification and tells you how to
+  subscribe. The topic is kept in `alertmanager/secrets/`, which Git ignores, and
+  `uninstall.sh --remove-data` deletes it.
 - Container monitoring with cAdvisor: CPU, memory, network and disk per container, in a
   new "Containers" row at the top of the dashboard, plus alerts for a container that keeps
   restarting or runs out of memory.

@@ -18,8 +18,8 @@ stops and removes the monitoring containers. your data and settings are kept,
 so ./scripts/install.sh brings everything back.
 
 options:
-  --remove-data  also delete all collected metrics, grafana's database and .env.
-                 this cannot be undone
+  --remove-data  also delete all collected metrics, grafana's database, .env
+                 and your ntfy topic. this cannot be undone
   -y, --yes      dont ask for confirmation (only matters with --remove-data)
   -h, --help     show this help
 EOF
@@ -40,6 +40,7 @@ require_cmd docker
 
 project="$(compose_project_name)"
 volumes=("${project}_prometheus_data" "${project}_grafana_data" "${project}_alertmanager_data")
+ntfy_file=alertmanager/secrets/ntfy_url
 
 # compose reads docker-compose.yml even just to stop things, and that file says the
 # password is required (:?). if .env is already gone that would fail before doing
@@ -61,6 +62,9 @@ if [ "$REMOVE_DATA" = 0 ]; then
   if [ -f .env ]; then
     echo "    settings file  $PROJECT_ROOT/.env"
   fi
+  if [ -f "$ntfy_file" ]; then
+    echo "    ntfy topic     $PROJECT_ROOT/$ntfy_file"
+  fi
   echo "    to bring it all back:  ./scripts/install.sh"
   echo "    to delete it for good: ./scripts/uninstall.sh --remove-data"
   exit 0
@@ -81,6 +85,9 @@ for v in "${volumes[@]}"; do
 done
 if [ -f .env ]; then
   to_delete+=("settings file  $PROJECT_ROOT/.env (your grafana password)")
+fi
+if [ -f "$ntfy_file" ]; then
+  to_delete+=("ntfy topic     $PROJECT_ROOT/$ntfy_file (unsubscribe in the app too)")
 fi
 
 if [ "${#to_delete[@]}" -eq 0 ]; then
@@ -107,7 +114,7 @@ info "removing the containers and deleting the data"
 # -v removes the named volumes declared in docker-compose.yml, and only those.
 # volumes from other projects are never touched
 compose down -v
-rm -f .env
+rm -f .env "$ntfy_file"
 
 # check it actually worked instead of trusting it
 for v in "${volumes[@]}"; do

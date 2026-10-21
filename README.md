@@ -25,6 +25,8 @@ Network traffic and errors, battery, power source and every temperature sensor.
 - A dashboard that's there as soon as you log in. Nothing to import or click through.
 - CPU, memory, network and disk use **per Docker container**, so you can see which one
   of your lab containers is eating the machine.
+- Alerts when something's wrong (disk filling up, overheating, a container crash
+  looping), optionally sent to your phone with [ntfy](https://ntfy.sh).
 - 30 days of history, capped at 5 GB so it can never fill your disk.
 - Private by default: nothing is reachable from other devices unless you choose that
   during install.
@@ -53,11 +55,13 @@ cd homelab-monitoring
 ./scripts/install.sh
 ```
 
-The installer asks you one question:
+The installer asks you two questions. First, who can open the dashboard:
 
 - **Only this machine.** Pick this on a laptop or desktop you sit in front of.
 - **Any device on your home network.** Pick this on a server with no screen, so you can
   open the dashboard from your laptop or phone.
+
+Second, whether you want alerts on your phone. See [Alerts](#alerts) for what that means.
 
 When it's done, it prints the address to open. Log in as `admin`. The password was
 generated for you and saved in `.env`. To see it:
@@ -76,6 +80,7 @@ Running the installer again is safe. It keeps your settings and your data.
 | --- | --- |
 | `--local` | Only this machine can open Grafana (the default) |
 | `--lan` | Devices on your home network can open Grafana |
+| `--ntfy` | Turn on phone notifications without asking |
 | `--yes` | Don't ask anything, use the defaults |
 | `--help` | Show all options |
 
@@ -130,7 +135,8 @@ normal: it means you're on an exact release rather than whatever was pushed most
 This removes the containers but **keeps your data and settings**, so
 `./scripts/install.sh` brings everything back exactly as it was.
 
-To delete everything for good (all collected metrics, Grafana's database and your `.env`):
+To delete everything for good (all collected metrics, Grafana's database, your `.env` and
+your ntfy topic):
 
 ```bash
 ./scripts/uninstall.sh --remove-data
@@ -173,6 +179,65 @@ sudo firewall-cmd --permanent --add-port=3000/tcp && sudo firewall-cmd --reload 
 
 Only Grafana is ever opened up, because it's the only piece with a login. Prometheus and
 Node Exporter always stay private to the machine.
+
+## Alerts
+
+Prometheus checks these rules all the time. You can see them at
+`http://127.0.0.1:9090/alerts`, and the ones firing right now at `http://127.0.0.1:9093`.
+
+| Alert | Fires when |
+| --- | --- |
+| NodeExporterDown | No metrics for 2 minutes, so every other alert is blind |
+| HighCpuUsage | CPU above 90% for 15 minutes |
+| HighMemoryUsage | Memory above 90% for 15 minutes |
+| MemoryPressureHigh | Programs keep waiting for memory for 10 minutes |
+| DiskAlmostFull | Under 10% free on a disk for 15 minutes |
+| DiskWillFillIn24h | Under 20% free and, at the current rate, full within a day |
+| HighTemperature | A sensor within 10°C of its own critical limit for 5 minutes |
+| BatteryLow | Battery under 15% and not charging |
+| ContainerRestarting | A container restarted twice in 15 minutes |
+| ContainerOomKilled | A container was killed for using too much memory |
+
+The rules are in `prometheus/alerts.yml`. After editing them, run
+`docker compose up -d --force-recreate prometheus`. A plain `restart` can keep reading the
+old file, because many editors save by replacing the file, and the container still holds
+the old one.
+
+### Phone notifications with ntfy
+
+[ntfy](https://ntfy.sh) is a free app that shows push notifications. No account, no bot to
+set up. If you said yes during install, the installer:
+
+1. Made up a random **topic** (like a private channel name) and saved it in
+   `alertmanager/secrets/ntfy_url`.
+2. Sent a test notification and printed the topic.
+
+Then on your phone: install the ntfy app, tap **+**, and subscribe to that topic. You'll
+get one message when an alert starts, a reminder every 6 hours while it lasts, and one
+when it's resolved.
+
+Said no, and changed your mind? Run `./scripts/install.sh --ntfy`. Lost the topic?
+`cat alertmanager/secrets/ntfy_url` (it's the part after `ntfy.sh/`, before the `?`).
+
+**Keep the topic to yourself.** On the public ntfy.sh server, anyone who knows a topic
+name can read it. That's why it's long and random, and why it's in a folder Git ignores.
+Alert messages contain things like disk and container names, nothing more, but if you'd
+rather nothing leaves your home, ntfy can be
+[self-hosted](https://docs.ntfy.sh/install/): put your own server's address in
+`ntfy_url` instead, and keep the `?template=alertmanager` at the end.
+
+To send a test alert through the whole chain (it clears itself after 5 minutes):
+
+```bash
+docker exec alertmanager amtool alert add TestAlert severity=warning \
+  --annotation='summary="Test alert"' --alertmanager.url=http://127.0.0.1:9093
+```
+
+It shows up on your phone after about 30 seconds. Alertmanager waits that long in case
+related alerts arrive too, so they come as one message instead of five.
+
+To turn notifications off, delete `alertmanager/secrets/ntfy_url`. Alerts still show up at
+`http://127.0.0.1:9093`.
 
 ## Some panels are empty. Is that broken?
 
@@ -242,6 +307,8 @@ the folder every 10 seconds.
   so you can see which settings exist, but it never holds a real value. The installer
   generates the real `.env` on your machine, so the password is never typed, shared or
   committed.
+- **Your ntfy topic** lives in `alertmanager/secrets/`, which has its own `.gitignore`
+  that ignores everything in the folder except itself.
 
 ### Why everything uses host networking
 
@@ -301,6 +368,7 @@ docker-compose.yml                              the services
 prometheus/prometheus.yml                       what to collect and how often
 prometheus/alerts.yml                           when something counts as a problem
 alertmanager/alertmanager.yml                   how alerts are grouped and sent
+alertmanager/secrets/                           your ntfy topic (ignored by git)
 grafana/provisioning/datasources/prometheus.yml connects Grafana to Prometheus
 grafana/provisioning/dashboards/dashboards.yml  tells Grafana where dashboards live
 grafana/dashboards/laptop-overview.json         the dashboard itself

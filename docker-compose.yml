@@ -39,6 +39,9 @@ services:
     network_mode: "host"
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      #the folder and not the file, so it still starts when theres no ntfy_url yet.
+      #a missing file would make docker create a root owned folder in its place
+      - ./alertmanager/secrets:/etc/alertmanager/secrets:ro
       #silences and what was already sent, so a restart doesnt forget them
       - alertmanager_data:/alertmanager
     #command replaces the image's default flags, so config and storage are repeated
