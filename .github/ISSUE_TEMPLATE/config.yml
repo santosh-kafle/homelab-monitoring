@@ -1,0 +1,9 @@
+# no blank issues, so every bug report comes with the details needed to look into it
+blank_issues_enabled: false
+contact_links:
+  - name: Read the troubleshooting section first
+    url: https://github.com/santosh-kafle/homelab-monitoring#some-panels-are-empty-is-that-broken
+    about: Empty panels are usually your hardware, not a bug.
+  - name: Report a security problem
+    url: https://github.com/santosh-kafle/homelab-monitoring/security/advisories/new
+    about: Please don't post security problems in a public issue.

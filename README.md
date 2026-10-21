@@ -353,8 +353,10 @@ every service has an explicit listen address.
 - **Node Exporter can only read the host, never write to it.** Every host folder is
   mounted read-only (`:ro`).
 - **cAdvisor sees more than Node Exporter.** To name each container it reads Docker's
-  socket and `/var/lib/docker`, so it can see every container's details. It's all
-  read-only, it only listens on `127.0.0.1`, and it isn't run as `privileged`. The one
+  socket and `/var/lib/docker`, so it can see every container's details. The folders are
+  read-only, but a read-only socket still accepts any request, so cAdvisor is trusted
+  the way any tool with the Docker socket is. It only listens on `127.0.0.1`, and it
+  isn't run as `privileged`. The one
   extra permission is reading the kernel log (`SYSLOG`), the only place the kernel
   announces that it killed a container for running out of memory.
 - **cAdvisor is trimmed down.** By default it exports about 1000 series for a dozen
@@ -380,9 +382,18 @@ scripts/lib.sh                                  shared helpers for the scripts
 .env.example                                    which settings exist
 docs/images/                                    screenshots for this README
 CHANGELOG.md                                    what changed in each release
+CONTRIBUTING.md                                 how to help, and how to check your changes
+SECURITY.md                                     how to report a security problem privately
+.github/ISSUE_TEMPLATE/                         the bug report and feature request forms
 .github/workflows/ci.yml                        automatic checks on every push and pull request
 .github/dependabot.yml                          opens pull requests for new image versions
 ```
+
+## Contributing
+
+Bug reports, panels, alerts and doc fixes are all welcome, see
+[CONTRIBUTING.md](CONTRIBUTING.md). Found a security problem? Please report it privately,
+see [SECURITY.md](SECURITY.md).
 
 ## License
 

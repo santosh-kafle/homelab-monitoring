@@ -7,6 +7,17 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- A contributing guide, a security policy, a code of conduct, and forms for bug reports
+  and feature requests.
+
+### Fixed
+
+- The README said cAdvisor's access is all read-only. Its folders are, but Docker's
+  socket accepts any request even when mounted read-only. The README and the new
+  security policy now say so.
+
 ## [0.4.0] - 2026-10-21
 
 ### Added

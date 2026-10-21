@@ -1,0 +1,17 @@
+name: Feature request
+description: An idea for a new panel, alert or feature
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to see or do?
+      description: The problem first, not the solution. "I want to know when X" works better than "add panel Y".
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could it work?
+      description: Optional. A PromQL query, a screenshot of a panel you like, a link.
