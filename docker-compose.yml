@@ -32,7 +32,7 @@ services:
       - '--web.listen-address=127.0.0.1:9090'
 
   alertmanager:
-    image: prom/alertmanager:v0.34.1
+    image: prom/alertmanager:v0.34.2
     container_name: alertmanager
     restart: unless-stopped
     #host network like the rest, prometheus reaches it on plain localhost:9093
