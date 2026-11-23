@@ -118,7 +118,7 @@ services:
       - '--collector.netclass.ignored-devices=^(veth.*|br-.*|docker\d*|lo)$$'
 
   cadvisor:
-    image: ghcr.io/google/cadvisor:v0.60.6
+    image: ghcr.io/google/cadvisor:v0.61.1
     container_name: cadvisor
     restart: unless-stopped
     #host network like the rest, prometheus scrapes it on localhost
